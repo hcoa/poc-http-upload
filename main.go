@@ -47,6 +47,7 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
 		if err != nil {
+			log.Printf("Error %v", err)
 			http.Error(w, err.Error(), status)
 		}
 	}()
@@ -64,7 +65,6 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 	_, err = io.Copy(buf, file)
 	if err != nil {
 		status = http.StatusInternalServerError
-		log.Printf("Error %v", err)
 		return
 	}
 
@@ -83,14 +83,12 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 	outFile, err := os.OpenFile(fullpath, os.O_WRONLY|os.O_CREATE, filesMask)
 	if err != nil {
 		status = http.StatusInternalServerError
-		log.Printf("Error %v", err)
 		return
 	}
 	defer outFile.Close()
 	written, err := io.Copy(outFile, buf)
 	if err != nil {
 		status = http.StatusInternalServerError
-		log.Printf("Error %v", err)
 		return
 	}
 	storage.addHashes(fullpath, sf)
@@ -106,6 +104,7 @@ func getFileHandle(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
 		if err != nil {
+			log.Printf("Error %v", err)
 			http.Error(w, err.Error(), status)
 		}
 	}()
@@ -127,16 +126,24 @@ func getFileHandle(w http.ResponseWriter, r *http.Request) {
 		status = http.StatusInternalServerError
 		return
 	}
+	fi, err := f.Stat()
+	if err != nil {
+		status = http.StatusInternalServerError
+		return
+	}
 	defer f.Close()
 	buffer := make([]byte, 512)
 	_, err = f.Read(buffer)
 	f.Seek(0, 0) // reset read pointer
 	contentType := http.DetectContentType(buffer)
+	length := strconv.FormatInt(fi.Size(), 10)
 	w.Header().Set("Content-Disposition", "attachement; filename="+name)
 	w.Header().Set("Content-Type", contentType)
-
-	written, err := io.Copy(w, f)
-	w.Header().Set("Content-Length", string(written))
+	w.Header().Set("Content-Length", length)
+	_, err = io.Copy(w, f)
+	if err != nil {
+		status = http.StatusInternalServerError
+	}
 }
 
 func main() {

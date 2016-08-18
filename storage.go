@@ -104,7 +104,7 @@ func (s *Store) findDup(sf *FileHash) string {
 	defer s.Unlock()
 	for k, v := range s.Hashes {
 		score := 0
-		if bytes.Compare(v.MurHash, sf.MurHash) == 0 {
+		if bytes.Equal(v.MurHash, sf.MurHash) {
 			score++
 		}
 		if v.FarmHash == sf.FarmHash {
