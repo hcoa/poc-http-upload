@@ -1,0 +1,16 @@
+hash: 9491f0f648cbddc015bfb4ffb39418d0e17950aa3ae08060cb717deda7dc1785
+updated: 2016-08-21T15:06:19.737490901+03:00
+imports:
+- name: github.com/dgryski/go-farm
+  version: f94e93e5a2b3a579af0f5367c84b54cb9aa00074
+- name: github.com/gorilla/context
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+- name: github.com/gorilla/mux
+  version: cf79e51a62d8219d52060dfc1b4e810414ba2d15
+- name: github.com/spaolacci/murmur3
+  version: 0d12bf811670bf6a1a63828dfbd003eded177fce
+- name: github.com/zond/god
+  version: eb47e4398c336499cd173d12be8cbca194f23c04
+  subpackages:
+  - murmur
+devImports: []

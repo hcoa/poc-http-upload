@@ -132,6 +132,7 @@ func getFileHandle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer f.Close()
+	// need only 512 bytes to determine contentType
 	buffer := make([]byte, 512)
 	_, err = f.Read(buffer)
 	f.Seek(0, 0) // reset read pointer
