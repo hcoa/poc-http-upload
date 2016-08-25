@@ -22,7 +22,7 @@ Vagrant.configure(2) do |config|
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
-  # config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.network "forwarded_port", guest: 8080, host: 8080
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -37,7 +37,7 @@ Vagrant.configure(2) do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
+  config.vm.synced_folder ".", "/vagrant_data"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
@@ -65,19 +65,19 @@ Vagrant.configure(2) do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   # very simple bootstrap
-  config.vm.provision "shell", inline: <<-SHELL
-    sudo apt-get update
-    GOLANG_VERSION=1.7
-    GLIDE_VERSION=v0.11.1
+  # config.vm.provision "shell", inline: <<-SHELL
+  #   sudo apt-get update
+  #   GOLANG_VERSION=1.7
+  #   GLIDE_VERSION=v0.11.1
 
-    wget -no-check-certificate -quiet https://storage.googleapis.com/golang/go$GOLANG_VERSION.linux-amd64.tar.gz
-    sudo tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz
-    echo "export GOPATH=/vagrant" >> /home/vagrant/.bashrc
-    echo "export PATH=$PATH:$GOPATH/bin:/usr/local/go/bin" >> /home/vagrant/.bashrc
-    rm go$GOLANG_VERSION.linux-amd64.tar.gz
-    wget -no-check-certificate -quiet https://github.com/Masterminds/glide/releases/download/$GLIDE_VERSION/glide-$GLIDE_VERSION-linux-amd64.tar.gz
-    sudo tar -C /tmp -xzf glide-$GLIDE_VERSION-linux-amd64.tar.gz && mv /tmp/linux-amd64/glide $GOPATH/bin
-    rm glide-$GLIDE_VERSION-linux-amd64.tar.gz
-    echo "Done."
-  SHELL
+  #   wget --no-check-certificate --quiet https://storage.googleapis.com/golang/go$GOLANG_VERSION.linux-amd64.tar.gz
+  #   sudo tar -C /usr/local -xzf go$GOLANG_VERSION.linux-amd64.tar.gz
+  #   echo "export GOPATH=/vagrant" >> /home/vagrant/.bashrc
+  #   echo "export PATH=$PATH:$GOPATH/bin:/usr/local/go/bin" >> /home/vagrant/.bashrc
+  #   rm go$GOLANG_VERSION.linux-amd64.tar.gz
+  #   wget --no-check-certificate --quiet https://github.com/Masterminds/glide/releases/download/$GLIDE_VERSION/glide-$GLIDE_VERSION-linux-amd64.tar.gz
+  #   sudo tar -C /tmp -xzf glide-$GLIDE_VERSION-linux-amd64.tar.gz && mv /tmp/linux-amd64/glide $GOPATH/bin
+  #   rm glide-$GLIDE_VERSION-linux-amd64.tar.gz
+  #   echo "Done."
+  # SHELL
 end

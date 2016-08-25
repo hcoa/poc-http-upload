@@ -18,7 +18,7 @@ type Storer interface {
 	SaveLoader
 	addFile(name, path string)
 	getFilePath(name string) (string, bool)
-	deleteFile(name string) error
+	deleteFile(name string)
 }
 
 type FileHash struct {
@@ -88,8 +88,10 @@ func (s *Store) getFilePath(name string) (string, bool) {
 	return v, k
 }
 
-func (s *Store) deleteFile(name string) error {
-	return nil
+func (s *Store) deleteFile(name string) {
+	s.Lock()
+	delete(s.Files, name)
+	s.Unlock()
 }
 
 func (s *Store) addHashes(path string, sf FileHash) {

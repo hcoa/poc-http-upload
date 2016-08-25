@@ -147,10 +147,29 @@ func getFileHandle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func deleteHandle(w http.ResponseWriter, r *http.Request) {
+	var status int
+	var err error
+	defer func() {
+		if err != nil {
+			log.Printf("Error %v", err)
+			http.Error(w, err.Error(), status)
+		}
+	}()
+	name, ok := mux.Vars(r)["name"]
+	if !ok {
+		status = http.StatusBadRequest
+		err = errors.New("No name were provided")
+		return
+	}
+	storage.deleteFile(name)
+}
+
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/v1/upload", uploadHandle).Methods("POST")
-	r.HandleFunc("/v1/file/{name}", getFileHandle).Methods("GET")
+	r.HandleFunc("/v1/files/{name}", getFileHandle).Methods("GET")
+	r.HandleFunc("/v1/files/{name}", deleteHandle).Methods("DELETE")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":8080", nil))
