@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 # APP := $(shell basename "$(CURDIR)")
 APP := app
 CONTAINER_NAME := http-load-poc
