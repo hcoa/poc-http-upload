@@ -14,8 +14,14 @@ type SaveLoader interface {
 	loadData() error
 }
 
+type FileHasher interface {
+	addHashes(path string, sf FileHash)
+	findDup(sf *FileHash) string
+}
+
 type Storer interface {
 	SaveLoader
+	FileHasher
 	addFile(name, path string)
 	getFilePath(name string) (string, bool)
 	deleteFile(name string)
@@ -30,16 +36,16 @@ type FileHash struct {
 type Store struct {
 	Files       map[string]string   `json:"files,omitepmty"`  // will contain name -> path
 	Hashes      map[string]FileHash `json:"hashes,omitempty"` // path -> hashes
-	FilePath    string              `json:"-"`
+	ConfigPath  string              `json:"-"`
 	*sync.Mutex `json:"-"`
 }
 
-func newStorage(filePath string) *Store {
+func newStorage(filePath string) Storer {
 	return &Store{
-		Files:    make(map[string]string),
-		Hashes:   make(map[string]FileHash),
-		FilePath: filePath,
-		Mutex:    new(sync.Mutex),
+		Files:      make(map[string]string),
+		Hashes:     make(map[string]FileHash),
+		ConfigPath: filePath,
+		Mutex:      new(sync.Mutex),
 	}
 }
 
@@ -51,7 +57,7 @@ func (s *Store) saveData() error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(s.FilePath, buffer.Bytes(), filesMask)
+	err = ioutil.WriteFile(s.ConfigPath, buffer.Bytes(), filesMask)
 	if err != nil {
 		return err
 	}
@@ -62,7 +68,7 @@ func (s *Store) loadData() error {
 	loadedStore := &Store{}
 	s.Lock()
 	defer s.Unlock()
-	f, err := os.Open(s.FilePath)
+	f, err := os.Open(s.ConfigPath)
 	if err != nil {
 		return err
 	}

@@ -4,10 +4,14 @@ import (
 	// "errors"
 	"bytes"
 	"errors"
+	"flag"
 	"io"
 	"log"
+	"os/signal"
+	"syscall"
 
 	"github.com/gorilla/mux"
+
 	// "mime/multipart"
 	"net/http"
 	"os"
@@ -16,11 +20,15 @@ import (
 
 const (
 	MAX32K    = 32 << 20 // 32 Mb
-	filesDir  = "./files"
-	filesMask = 0644 // -rw-r--r--
-	CnListen  = "LISTEN"
-	APIVer    = "/v1"
-	StorFile  = "stor.json"
+	filesMask = 0644     // -rw-r--r--
+	// APIVer    = "/v1"
+	StorFile     = "stor.json"
+	StaticFolder = "./static/"
+)
+
+var (
+	filesDir   = flag.String("dir", "./files", "directory to store files")
+	listenAddr = flag.String("addr", ":8080", "listen addr. default is :8080")
 )
 
 // type Config map[string]string
@@ -30,7 +38,7 @@ const (
 // 	c[CnListen] = Getenv(CnListen, ":8080")
 // }
 
-var storage *Store
+var storage Storer
 
 func init() {
 	storage = newStorage(StorFile)
@@ -38,7 +46,7 @@ func init() {
 	// try to load data from disk
 	err := storage.loadData()
 	if err != nil {
-		log.Printf("Nothing to load")
+		log.Printf("WARN: Nothing to load")
 	}
 }
 
@@ -47,7 +55,7 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
 		if err != nil {
-			log.Printf("Error %v", err)
+			log.Printf("ERR: %v", err)
 			http.Error(w, err.Error(), status)
 		}
 	}()
@@ -79,7 +87,7 @@ func uploadHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("File " + header.Filename + " was uploaded."))
 		return
 	}
-	fullpath := filesDir + "/" + header.Filename
+	fullpath := *filesDir + "/" + header.Filename
 	outFile, err := os.OpenFile(fullpath, os.O_WRONLY|os.O_CREATE, filesMask)
 	if err != nil {
 		status = http.StatusInternalServerError
@@ -104,7 +112,7 @@ func getFileHandle(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
 		if err != nil {
-			log.Printf("Error %v", err)
+			log.Printf("ERR: %v", err)
 			http.Error(w, err.Error(), status)
 		}
 	}()
@@ -152,7 +160,7 @@ func deleteHandle(w http.ResponseWriter, r *http.Request) {
 	var err error
 	defer func() {
 		if err != nil {
-			log.Printf("Error %v", err)
+			log.Printf("ERR: %v", err)
 			http.Error(w, err.Error(), status)
 		}
 	}()
@@ -166,11 +174,37 @@ func deleteHandle(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	r := mux.NewRouter()
-	r.HandleFunc("/v1/upload", uploadHandle).Methods("POST")
-	r.HandleFunc("/v1/files/{name}", getFileHandle).Methods("GET")
-	r.HandleFunc("/v1/files/{name}", deleteHandle).Methods("DELETE")
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
-	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	flag.Parse()
+	// r := mux.NewRouter()
+	// r.HandleFunc("/api/upload", uploadHandle).Methods("POST")
+	// r.HandleFunc("/api/files/{name}", getFileHandle).Methods("GET")
+	// r.HandleFunc("/api/files/{name}", deleteHandle).Methods("DELETE")
+	// r.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
+	// http.Handle("/", r)
+	// log.Fatal(http.ListenAndServe(*listenPort, nil))
+	server := NewServer(ServOptions{
+		FilesDir: *filesDir,
+		Listen:   *listenAddr,
+	})
+	signalCh := make(chan os.Signal, syscall.SIGINT)
+	signal.Notify(signalCh)
+	errCh := make(chan error)
+	go func() {
+		if err := server.Start(); err != nil {
+			errCh <- err
+		}
+	}()
+	for {
+		select {
+		case err := <-errCh:
+			log.Printf("ERR: %s", err)
+			os.Exit(1)
+		case sig := <-signalCh:
+			switch sig {
+			case syscall.SIGINT:
+				server.Stop()
+				os.Exit(4)
+			}
+		}
+	}
 }
