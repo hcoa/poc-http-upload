@@ -18,4 +18,4 @@ make build
 
 3. Go to `localhost:8080`
 
-Files available via '/v1/files/<filename>'
+Files available via '/api/files/<filename>'
