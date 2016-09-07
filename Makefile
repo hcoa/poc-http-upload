@@ -2,6 +2,8 @@ SHELL := /bin/bash
 # APP := $(shell basename "$(CURDIR)")
 APP := app
 CONTAINER_NAME := http-load-poc
+
+.PHONY help vendor build build-mac build-container cleanup
 default: build
 
 help:
@@ -9,6 +11,11 @@ help:
 	@echo "  build              build application"
 	@echo "  build-mac          build application for darwin amd64"
 	@echo "  build-container    build container with application"
+
+
+# static:
+# 	@echo "+ $@"
+# 	CGO_ENABLED=1 go build -tags "$(BUILDTAGS) cgo static_build" -ldflags "-w -extldflags -static" -o app .
 
 vendor:
 	@export GOPATH="$(CURDIR)" && pushd ./src/$(APP)/ && glide up --strip-vcs --update-vendored; popd
